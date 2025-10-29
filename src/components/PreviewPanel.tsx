@@ -1,212 +1,227 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAppStore } from '../lib/store';
-import { RefreshCw, Smartphone, Monitor, AlertCircle, Wrench } from 'lucide-react';
+import { RefreshCw, Smartphone, Monitor, Layers, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
-import { fixCodeErrors } from '../lib/gemini-service';
-import { toast } from 'sonner@2.0.3';
+import { EmulatorView } from './EmulatorView';
 
 export function PreviewPanel() {
-  const { 
-    files, 
-    previewKey, 
-    lastError, 
-    setLastError, 
-    setFiles,
-    setIsGenerating,
-    addMessage,
-    getConversationHistory 
-  } = useAppStore();
+  const { files, previewKey, refreshPreview } = useAppStore();
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile' | 'emulator'>('desktop');
+  const [emulatorPlatform, setEmulatorPlatform] = useState<'web' | 'android' | 'ios'>('web');
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [isFixing, setIsFixing] = useState(false);
 
-  useEffect(() => {
-    if (!iframeRef.current) return;
+  const generateHTML = () => {
+    const htmlFile = files.find((f) => f.language === 'html');
+    const cssFile = files.find((f) => f.language === 'css');
+    const jsFile = files.find((f) => f.language === 'javascript');
 
-    const htmlFile = files.find((f) => f.name === 'index.html');
-    const jsFile = files.find((f) => f.name === 'script.js');
-    const cssFile = files.find((f) => f.name === 'styles.css');
-
-    if (!htmlFile) return;
-
-    let htmlContent = htmlFile.content;
-
-    // Inject CSS if exists
-    if (cssFile) {
-      const cssTag = `<style>${cssFile.content}</style>`;
-      htmlContent = htmlContent.replace('</head>', `${cssTag}</head>`);
-    }
-
-    // Inject JS with error handling
-    if (jsFile) {
-      const wrappedJs = `
-        window.addEventListener('error', function(e) {
-          window.parent.postMessage({ type: 'error', message: e.message, stack: e.error?.stack }, '*');
-        });
-        
-        window.addEventListener('unhandledrejection', function(e) {
-          window.parent.postMessage({ type: 'error', message: e.reason }, '*');
-        });
-        
-        try {
-          ${jsFile.content}
-        } catch(e) {
-          window.parent.postMessage({ type: 'error', message: e.message, stack: e.stack }, '*');
-        }
+    if (!htmlFile) {
+      return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>AI Builder</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-center;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+            .container {
+              text-align: center;
+              color: white;
+              padding: 2rem;
+            }
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 1rem;
+              animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-20px); }
+            }
+            h1 {
+              font-size: 2.5rem;
+              margin: 0 0 1rem 0;
+              font-weight: 600;
+            }
+            p {
+              font-size: 1.1rem;
+              opacity: 0.9;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="icon">✨</div>
+            <h1>AI Builder</h1>
+            <p>Start chatting to generate your app!</p>
+          </div>
+        </body>
+        </html>
       `;
-      const jsTag = `<script>${wrappedJs}</script>`;
-      htmlContent = htmlContent.replace('</body>', `${jsTag}</body>`);
     }
 
-    const iframe = iframeRef.current;
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    let html = htmlFile.content;
 
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(htmlContent);
-      iframeDoc.close();
+    if (cssFile && !html.includes('<style>') && !html.includes('</style>')) {
+      html = html.replace('</head>', `<style>${cssFile.content}</style></head>`);
     }
 
-    // Clear previous errors
-    setLastError(null);
-  }, [files, previewKey]);
+    if (jsFile && !html.includes('<script>') && !html.includes('</script>')) {
+      html = html.replace('</body>', `<script>${jsFile.content}</script></body>`);
+    }
 
-  // Listen for errors from iframe
+    return html;
+  };
+
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'error') {
-        const errorMsg = `${event.data.message}\n${event.data.stack || ''}`;
-        setLastError(errorMsg);
-        console.error('Preview Error:', errorMsg);
+    if (iframeRef.current && viewMode !== 'emulator') {
+      const html = generateHTML();
+      const iframe = iframeRef.current;
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(html);
+        iframeDoc.close();
       }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [setLastError]);
-
-  const handleRefresh = () => {
-    if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
     }
-    setLastError(null);
-  };
-
-  const handleAutoFix = async () => {
-    if (!lastError || isFixing) return;
-
-    setIsFixing(true);
-    toast.info('AI is analyzing and fixing the error...');
-
-    try {
-      const history = getConversationHistory();
-      const result = await fixCodeErrors(lastError, files, history);
-
-      if (result.files && result.files.length > 0) {
-        setFiles(result.files);
-        addMessage(`Fixed the error: ${result.message}`, 'assistant', result.files);
-        toast.success('Code fixed successfully!');
-        setLastError(null);
-      } else {
-        toast.error('Could not automatically fix the error');
-      }
-    } catch (error) {
-      toast.error('Failed to fix error automatically');
-    } finally {
-      setIsFixing(false);
-    }
-  };
+  }, [files, previewKey, viewMode]);
 
   return (
-    <div className="flex flex-col h-full bg-black/20 backdrop-blur-sm">
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-white/90">Live Preview</h2>
-        
+    <div className="h-full flex flex-col bg-[#1a1a1f]">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-white/5 bg-[#0f0f14] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {lastError && (
+          <h2 className="text-sm text-white/90">Live Preview</h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* View Mode Buttons */}
+          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleAutoFix}
-              disabled={isFixing}
-              className="bg-red-500/20 border border-red-500/50 text-red-300 hover:bg-red-500/30"
+              onClick={() => setViewMode('desktop')}
+              className={`h-7 px-2 ${
+                viewMode === 'desktop' ? 'bg-white/10' : 'hover:bg-white/5'
+              }`}
+              title="Desktop View"
             >
-              {isFixing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Fixing...
-                </>
-              ) : (
-                <>
-                  <Wrench className="w-4 h-4 mr-2" />
-                  Auto Fix Error
-                </>
-              )}
+              <Monitor className="w-3.5 h-3.5" />
             </Button>
-          )}
-          
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('mobile')}
+              className={`h-7 px-2 ${
+                viewMode === 'mobile' ? 'bg-white/10' : 'hover:bg-white/5'
+              }`}
+              title="Mobile View"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setViewMode('emulator');
+                setEmulatorPlatform('android');
+              }}
+              className={`h-7 px-2 ${
+                viewMode === 'emulator' ? 'bg-white/10' : 'hover:bg-white/5'
+              }`}
+              title="Emulator View"
+            >
+              <Layers className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
           <Button
             variant="ghost"
-            size="icon"
-            onClick={() => setViewMode('desktop')}
-            className={viewMode === 'desktop' ? 'bg-white/10' : ''}
+            size="sm"
+            onClick={refreshPreview}
+            className="h-7 px-2 hover:bg-white/5"
+            title="Refresh Preview"
           >
-            <Monitor className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode('mobile')}
-            className={viewMode === 'mobile' ? 'bg-white/10' : ''}
-          >
-            <Smartphone className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-          >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
-      {lastError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
-        >
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-red-300 mb-1">Error in Preview:</p>
-              <pre className="text-xs text-red-200/80 overflow-auto max-h-20 font-mono">
-                {lastError}
-              </pre>
+      {/* Preview Content */}
+      <div className="flex-1 p-4 flex items-center justify-center overflow-auto bg-[#0a0a0f]">
+        {viewMode === 'emulator' ? (
+          <div className="w-full h-full">
+            {/* Emulator platform selector */}
+            <div className="flex gap-2 justify-center mb-4">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEmulatorPlatform('web')}
+                className={`h-8 ${
+                  emulatorPlatform === 'web'
+                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
+                    : 'bg-white/5 border-white/10 text-white/60'
+                }`}
+              >
+                Web
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEmulatorPlatform('android')}
+                className={`h-8 ${
+                  emulatorPlatform === 'android'
+                    ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                    : 'bg-white/5 border-white/10 text-white/60'
+                }`}
+              >
+                Android
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEmulatorPlatform('ios')}
+                className={`h-8 ${
+                  emulatorPlatform === 'ios'
+                    ? 'bg-gray-500/20 border-gray-500/50 text-gray-400'
+                    : 'bg-white/5 border-white/10 text-white/60'
+                }`}
+              >
+                iOS
+              </Button>
             </div>
+            <EmulatorView platform={emulatorPlatform} htmlContent={generateHTML()} />
           </div>
-        </motion.div>
-      )}
-
-      <div className="flex-1 p-4 flex items-center justify-center">
-        <motion.div
-          key={viewMode}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className={`bg-white rounded-lg shadow-2xl overflow-hidden ${
-            viewMode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'
-          }`}
-        >
-          <iframe
-            ref={iframeRef}
-            className="w-full h-full border-0"
-            title="preview"
-            sandbox="allow-scripts allow-same-origin allow-forms"
-          />
-        </motion.div>
+        ) : (
+          <motion.div
+            key={viewMode}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className={`bg-white rounded-lg shadow-2xl overflow-hidden ${
+              viewMode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'
+            }`}
+          >
+            <iframe
+              ref={iframeRef}
+              className="w-full h-full border-0"
+              title="preview"
+              sandbox="allow-scripts allow-same-origin allow-forms"
+            />
+          </motion.div>
+        )}
       </div>
     </div>
   );

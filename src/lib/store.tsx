@@ -22,6 +22,7 @@ interface AppState {
   previewKey: number;
   showCodeEditor: boolean;
   lastError: string | null;
+  extraThinkMode: boolean;
 }
 
 interface AppContextType extends AppState {
@@ -36,6 +37,7 @@ interface AppContextType extends AppState {
   toggleCodeEditor: () => void;
   setLastError: (error: string | null) => void;
   getConversationHistory: () => Array<{ role: string; content: string }>;
+  setExtraThinkMode: (mode: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     previewKey: 0,
     showCodeEditor: true,
     lastError: null,
+    extraThinkMode: false,
   });
 
   const addMessage = useCallback((content: string, role: 'user' | 'assistant', files?: FileData[]) => {
@@ -130,6 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       previewKey: 0,
       showCodeEditor: true,
       lastError: null,
+      extraThinkMode: false,
     });
   }, []);
 
@@ -148,6 +152,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, [state.messages]);
 
+  const setExtraThinkMode = useCallback((mode: boolean) => {
+    setState((prev) => ({ ...prev, extraThinkMode: mode }));
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -163,6 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleCodeEditor,
         setLastError,
         getConversationHistory,
+        setExtraThinkMode,
       }}
     >
       {children}

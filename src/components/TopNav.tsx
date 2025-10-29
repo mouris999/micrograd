@@ -1,93 +1,52 @@
-import { Sparkles, Download, Upload, Code2, Eye } from 'lucide-react';
+import { Sparkles, Code2, Eye, EyeOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAppStore } from '../lib/store';
-import { toast } from 'sonner@2.0.3';
+import { Badge } from './ui/badge';
 
 export function TopNav() {
-  const { files, clearProject, showCodeEditor, toggleCodeEditor } = useAppStore();
-
-  const handleExport = () => {
-    // Create a simple export of all files
-    const exportData = files.map((file) => ({
-      name: file.name,
-      content: file.content,
-    }));
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'project-export.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Project exported successfully!');
-  };
-
-  const handleNewProject = () => {
-    if (confirm('Are you sure you want to start a new project? This will clear all current work.')) {
-      clearProject();
-      toast.success('New project created!');
-    }
-  };
+  const { showCodeEditor, toggleCodeEditor } = useAppStore();
 
   return (
-    <nav className="h-16 border-b border-white/10 bg-black/40 backdrop-blur-xl flex items-center justify-between px-6">
+    <div className="h-14 border-b border-white/5 bg-[#0f0f14] flex items-center justify-between px-4">
+      {/* Left - Logo */}
       <div className="flex items-center gap-3">
-        <div className="relative">
-          <Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" />
-          <div className="absolute inset-0 blur-xl bg-cyan-400/30" />
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-cyan-400" />
+          <span className="text-white">AI Builder Studio</span>
         </div>
-        <h1 className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-          AI Builder Studio
-        </h1>
+        <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-400 text-[10px] px-2 py-0.5">
+          Powered by 20 AI Agents
+        </Badge>
+        <Badge variant="outline" className="bg-green-500/20 border-green-500/50 text-green-300 text-[10px] px-2 py-0.5">
+          READY
+        </Badge>
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Right - Actions */}
+      <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={toggleCodeEditor}
-          className={`${
+          className={`h-8 ${
             showCodeEditor 
-              ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' 
-              : 'bg-white/5 border-white/10'
-          } hover:bg-cyan-500/30`}
+              ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' 
+              : 'text-white/60 hover:text-white hover:bg-white/5'
+          }`}
         >
           {showCodeEditor ? (
             <>
-              <Eye className="w-4 h-4 mr-2" />
+              <EyeOff className="w-4 h-4 mr-1.5" />
               Hide Code
             </>
           ) : (
             <>
-              <Code2 className="w-4 h-4 mr-2" />
+              <Eye className="w-4 h-4 mr-1.5" />
               Show Code
             </>
           )}
         </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNewProject}
-          className="bg-white/5 border-white/10 hover:bg-white/10"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          New Project
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          className="bg-white/5 border-white/10 hover:bg-white/10"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
       </div>
-    </nav>
+    </div>
   );
 }

@@ -1,219 +1,152 @@
 import { FileData } from './store';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyBrpOUatVTrYUbzqnPE7gfg3w5HaVjaTQg';
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || 'AIzaSyDl_9Yo7axD3E4VLCn5nLp20kfvM0WalJg';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+
 
 export interface GeminiResponse {
   message: string;
-  files: FileData[];
+  files?: FileData[];
   thinking?: string;
+  reasoning?: string;
 }
 
-interface TaskMode {
-  mode: 'coding' | 'reasoning' | 'chat';
-  maxTokens: number;
-  temperature: number;
-}
+const CLAUDE_STYLE_SYSTEM_PROMPT = `You are an elite AI coding assistant operating at the highest tier of intelligence. You think deeply, reason step-by-step, and generate production-ready code.
 
-const ADVANCED_SYSTEM_PROMPT = `# Advanced Gemini 2.5 Flash Coding System Prompt
+## MANDATORY THINKING PROTOCOL
 
-## Core Identity & Capabilities
-You are an advanced AI coding assistant powered by Gemini 2.5 Flash, optimized for maximum output quality, minimal errors, and intelligent task understanding. You have access to extensive context windows and should use them strategically.
+Before generating ANY code, engage in extended reasoning:
 
-## Task Detection & Response Mode
+**COMPREHENSION PHASE:**
+- Understand the user's explicit and implicit requirements
+- Identify the complexity level and scope
+- Determine what technologies and patterns are needed
 
-### Automatic Mode Selection
-Before responding, analyze the user's request and classify it:
+**ARCHITECTURAL PLANNING:**
+- Design the optimal technical approach
+- Plan all necessary files and their relationships
+- Map dependencies and generation order
+- Consider scalability and maintainability
 
-1. **CODING MODE** - Trigger when user requests:
-   - Building applications, features, or systems
-   - Code generation, refactoring, or debugging
-   - Algorithm implementation
-   - Technical architecture design
-   - Keywords: "build", "create", "code", "implement", "develop", "fix bug", "debug"
+**RISK ANALYSIS:**
+- Identify potential errors and edge cases
+- Consider security vulnerabilities
+- Anticipate performance bottlenecks
+- Plan error handling strategies
 
-2. **REASONING MODE** - Trigger when user requests:
-   - Problem analysis or solution planning
-   - System architecture decisions
-   - Performance optimization strategies
-   - Technical explanations with depth
-   - Keywords: "how to", "explain", "analyze", "optimize", "design pattern", "best approach"
+**QUALITY ASSURANCE:**
+- Ensure complete implementation (NO placeholders)
+- Verify all imports and dependencies
+- Add proper error handling everywhere
+- Include accessibility features
+- Optimize for performance
 
-3. **CHAT MODE** - Trigger when user requests:
-   - General conversation
-   - Simple questions
-   - Clarifications
-   - Non-technical discussion
+## CODE GENERATION RULES
 
-## Coding Mode Protocol
+**ABSOLUTE REQUIREMENTS:**
+1. Generate COMPLETE, working code - zero TODO comments
+2. Include comprehensive error handling with try-catch
+3. Add input validation and sanitization
+4. Use semantic HTML and proper accessibility (ARIA labels)
+5. Implement responsive design with Tailwind CSS
+6. Add loading states and user feedback
+7. Include smooth animations and transitions
+8. Optimize performance (debouncing, lazy loading, memoization)
+9. Write clean, maintainable code with clear comments
+10. Test edge cases mentally before generating
 
-### Phase 1: Deep Understanding (Don't Skip)
-BEFORE writing ANY code, you MUST:
-1. Analyze the complete requirement
-2. Identify all components needed
-3. Determine technologies and dependencies
-4. Plan the architecture
-5. Anticipate edge cases and errors
-
-### Phase 2: Intelligent Planning
-- Break down complex requests into logical modules
-- Identify potential bottlenecks and errors BEFORE coding
-- Choose optimal design patterns and algorithms
-- Plan for scalability and maintainability
-
-### Phase 3: High-Quality Code Generation
-
-#### Mandatory Code Standards:
-- ✅ **Complete, production-ready code** (no placeholders like "// Add logic here")
-- ✅ **Comprehensive error handling** (try-catch, input validation, edge cases)
-- ✅ **Detailed comments** explaining complex logic
-- ✅ **Type safety** (use TypeScript when applicable)
-- ✅ **Security best practices** (input sanitization, XSS protection)
-- ✅ **Performance optimization** (efficient algorithms, avoid nested loops where possible)
-- ✅ **Modular structure** (separation of concerns, reusable functions)
-- ✅ **Testing considerations** (write testable code with clear functions)
-
-#### Code Quality Checklist (Verify Before Outputting):
-- [ ] No syntax errors
-- [ ] All variables declared and initialized
-- [ ] All imports/dependencies included
-- [ ] Error handling for all external calls
-- [ ] Input validation implemented
-- [ ] Edge cases handled
-- [ ] Security vulnerabilities addressed
-- [ ] Code is DRY (Don't Repeat Yourself)
-- [ ] Functions have single responsibility
-- [ ] Clear variable and function names
-
-### Phase 4: Advanced Features
-
-#### Include When Relevant:
-- **Error handling** with user-friendly messages
-- **Input validation** for all user inputs
-- **Responsive design** with Tailwind CSS
-- **Accessibility** features (ARIA labels, keyboard navigation)
-- **Performance optimization** (debouncing, throttling, lazy loading)
-- **Local storage** for data persistence when needed
-- **API integration** patterns when working with backends
-
-## Output Format Standards
-
-### For Coding Responses:
-ALWAYS use this format to generate files:
+**FILE FORMAT:**
+Always wrap each file with markers:
 
 ### FILE: filename.ext
 \`\`\`language
-[Complete, error-free code]
+[complete production-ready code]
 \`\`\`
 
-Example:
-### FILE: index.html
-\`\`\`html
-<!DOCTYPE html>
-<html>...</html>
-\`\`\`
+**STANDARD WEB APP STRUCTURE:**
+- index.html (with Tailwind CDN, proper meta tags, semantic structure)
+- script.js (clean, modular, well-commented JavaScript)
+- styles.css (custom styles if needed beyond Tailwind)
 
-### FILE: script.js
-\`\`\`javascript
-// Complete working code
-\`\`\`
+**ENHANCED FEATURES TO INCLUDE:**
+- Smooth animations and micro-interactions
+- Loading skeletons and progress indicators
+- Toast notifications for user feedback
+- Keyboard shortcuts for power users
+- Dark mode support where appropriate
+- Mobile-first responsive design
+- Accessibility (screen reader support, keyboard navigation)
+- Error boundaries and graceful degradation
+- Performance optimizations (lazy loading, debouncing)
+- Local storage for persistence where relevant
 
-## Response Quality Standards
+**SECURITY BEST PRACTICES:**
+- Input sanitization to prevent XSS
+- Validate all user inputs
+- Escape output properly
+- Use secure random generation
+- Implement rate limiting logic
+- No hardcoded sensitive data
 
-### Every Response Must:
-1. **Be Accurate**: 100% correct syntax and logic
-2. **Be Complete**: No TODOs or placeholders in production code
-3. **Be Secure**: Follow security best practices
-4. **Be Efficient**: Use optimal algorithms and data structures
-5. **Be Maintainable**: Clean, documented, and modular
-6. **Be Beautiful**: Use modern design with Tailwind CSS
+**CODE QUALITY:**
+- Descriptive variable and function names
+- Single responsibility principle
+- DRY (Don't Repeat Yourself)
+- Proper indentation and formatting
+- Meaningful comments explaining WHY not just WHAT
+- Consistent coding style throughout
 
-### Never Do:
-- ❌ Output incomplete code with "// Complete this"
-- ❌ Skip error handling
-- ❌ Use deprecated APIs without noting them
-- ❌ Ignore security vulnerabilities
-- ❌ Hardcode sensitive data
-- ❌ Ignore edge cases
+Now respond to the user's request with deep thinking and complete, production-ready code.`;
 
-## Technology Stack Guidelines
+const EXTRA_THINK_PROMPT = `## EXTRA THINKING MODE ACTIVATED
 
-### Frontend:
-- Use Tailwind CSS for styling (CDN: https://cdn.tailwindcss.com)
-- Use vanilla JavaScript or specify framework if needed
-- Ensure responsive design with mobile-first approach
-- Use modern ES6+ features
+Engage MAXIMUM reasoning depth:
 
-### Design Principles:
-- Modern, clean, and professional aesthetics
-- Use gradients and backdrop blur for depth
-- Implement hover effects and transitions
-- Ensure proper contrast and readability
-- Add loading states and error messages
+**DEEP ANALYSIS:**
+1. Break down the request into atomic requirements
+2. Research best practices for each requirement
+3. Consider multiple implementation approaches
+4. Evaluate trade-offs of each approach
+5. Select optimal solution with justification
 
-### Best Practices:
-- Semantic HTML5 elements
-- Accessible markup (ARIA labels, alt text)
-- Cross-browser compatibility
-- Performance optimization
-- SEO-friendly structure
+**COMPREHENSIVE PLANNING:**
+1. Design complete system architecture
+2. Plan data flow and state management
+3. Identify all edge cases and error scenarios
+4. Design user interaction patterns
+5. Plan performance optimization strategy
 
-## Continuous Improvement Loop
+**QUALITY MAXIMIZATION:**
+1. Add professional polish beyond requirements
+2. Implement accessibility best practices
+3. Include delightful UX details
+4. Optimize for production deployment
+5. Add comprehensive error handling
 
-After generating code, perform self-review:
-1. Did I include ALL necessary code?
-2. Are there any potential runtime errors?
-3. Is the code secure against common vulnerabilities?
-4. Can this code handle unexpected inputs?
-5. Is the performance optimal?
-6. Is the code easy to understand and maintain?
-7. Did I provide clear usage instructions?
+**PROACTIVE ENHANCEMENTS:**
+1. Anticipate user's next needs
+2. Add helpful features they haven't requested
+3. Implement best-in-class patterns
+4. Include thoughtful documentation
+5. Provide usage examples
 
-If ANY answer is "No" or "Uncertain" → REVISE before outputting
-
-Now respond to the user's request following this format.`;
-
-function detectTaskMode(prompt: string): TaskMode {
-  const lowerPrompt = prompt.toLowerCase();
-
-  const codingKeywords = ['build', 'create', 'code', 'implement', 'develop', 'fix', 'debug', 'generate', 'make'];
-  const reasoningKeywords = ['how to', 'explain', 'analyze', 'optimize', 'best approach', 'design pattern', 'why', 'what is'];
-
-  const isCoding = codingKeywords.some(keyword => lowerPrompt.includes(keyword));
-  const isReasoning = reasoningKeywords.some(keyword => lowerPrompt.includes(keyword)) && !isCoding;
-
-  if (isCoding) {
-    return {
-      mode: 'coding',
-      maxTokens: 200000,
-      temperature: 0.7
-    };
-  } else if (isReasoning) {
-    return {
-      mode: 'reasoning',
-      maxTokens: 100000,
-      temperature: 0.8
-    };
-  } else {
-    return {
-      mode: 'chat',
-      maxTokens: 50000,
-      temperature: 0.9
-    };
-  }
-}
+Take your time. Think deeply. Generate the absolute best solution possible.`;
 
 export async function generateWithGemini(
   userPrompt: string,
-  conversationHistory: Array<{ role: string; content: string }> = []
+  conversationHistory: Array<{ role: string; content: string }> = [],
+  extraThink: boolean = false
 ): Promise<GeminiResponse> {
   try {
-    const taskMode = detectTaskMode(userPrompt);
+    // Build conversation context (last 8 messages for better context)
+    const messages = conversationHistory.slice(-8);
+    const conversationContext = messages.length > 0
+      ? `\n\nPrevious conversation:\n${messages.map((m) => `${m.role}: ${m.content}`).join('\n')}\n\n`
+      : '';
 
-    const messages = conversationHistory.slice(-6);
-    const fullPrompt = `${ADVANCED_SYSTEM_PROMPT}\n\nPrevious conversation:\n${messages
-      .map((m) => `${m.role}: ${m.content}`)
-      .join('\n')}\n\nUser: ${userPrompt}\n\nAssistant:`;
+    const thinkingMode = extraThink ? EXTRA_THINK_PROMPT : '';
+    
+    const fullPrompt = `${CLAUDE_STYLE_SYSTEM_PROMPT}\n\n${thinkingMode}${conversationContext}User Request: ${userPrompt}\n\nAssistant Response:`;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -231,67 +164,97 @@ export async function generateWithGemini(
           },
         ],
         generationConfig: {
-          temperature: taskMode.temperature,
+          temperature: extraThink ? 0.8 : 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: taskMode.maxTokens,
+          maxOutputTokens: 8192,
           candidateCount: 1,
         },
         safetySettings: [
           {
             category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_NONE',
           },
           {
             category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_NONE',
           },
           {
             category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE'
+            threshold: 'BLOCK_NONE',
           },
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE'
-          }
-        ]
+            threshold: 'BLOCK_NONE',
+          },
+        ],
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('API Error Details:', errorData);
-      throw new Error(`Gemini API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     console.log('Gemini Response:', data);
 
+    // Check for blocked content
+    if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+      throw new Error('Response blocked by safety filters. Try rephrasing your request.');
+    }
+    
     const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
+    
     if (!generatedText) {
       throw new Error('No response generated from Gemini API');
     }
 
+    // Extract thinking/reasoning if present
+    const reasoning = extractReasoning(generatedText);
+
+    // Parse the response to extract files
     const files = parseFilesFromResponse(generatedText);
     const message = extractMessageFromResponse(generatedText);
 
     return {
       message,
-      files: files.length > 0 ? files : [],
+      files: files.length > 0 ? files : undefined,
+      reasoning,
     };
   } catch (error) {
     console.error('Gemini API Error:', error);
     return {
-      message: `I encountered an error: ${error.message}. Let me try a different approach.`,
+      message: `I encountered an error: ${error.message}. Please try again or rephrase your request.`,
       files: [],
     };
   }
 }
 
+function extractReasoning(text: string): string | undefined {
+  // Look for reasoning sections
+  const reasoningPatterns = [
+    /\*\*COMPREHENSION PHASE:\*\*([\s\S]*?)(?=\*\*|###|$)/i,
+    /\*\*THINKING:\*\*([\s\S]*?)(?=\*\*|###|$)/i,
+    /\*\*REASONING:\*\*([\s\S]*?)(?=\*\*|###|$)/i,
+    /\*\*ANALYSIS:\*\*([\s\S]*?)(?=\*\*|###|$)/i,
+  ];
+
+  for (const pattern of reasoningPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1].trim().length > 50) {
+      return match[1].trim();
+    }
+  }
+
+  return undefined;
+}
+
 function parseFilesFromResponse(text: string): FileData[] {
   const files: FileData[] = [];
-
+  
+  // Match ### FILE: filename pattern followed by code block
   const filePattern = /### FILE:\s*([^\n]+)\n```(\w+)\n([\s\S]*?)```/g;
   let match;
 
@@ -307,6 +270,7 @@ function parseFilesFromResponse(text: string): FileData[] {
     });
   }
 
+  // Fallback: try to find standalone code blocks if no FILE markers
   if (files.length === 0) {
     const codeBlockPattern = /```(\w+)\n([\s\S]*?)```/g;
     const codeBlocks: Array<{ lang: string; code: string }> = [];
@@ -318,14 +282,15 @@ function parseFilesFromResponse(text: string): FileData[] {
       });
     }
 
-    codeBlocks.forEach((block) => {
+    // Auto-assign filenames based on language and content
+    codeBlocks.forEach((block, index) => {
       let fileName = 'index.html';
       let language = block.lang;
 
       if (block.lang === 'html') {
         fileName = 'index.html';
       } else if (block.lang === 'javascript' || block.lang === 'js') {
-        fileName = 'script.js';
+        fileName = codeBlocks.length > 2 ? 'script.js' : 'index.html';
         language = 'javascript';
       } else if (block.lang === 'css') {
         fileName = 'styles.css';
@@ -334,6 +299,12 @@ function parseFilesFromResponse(text: string): FileData[] {
       } else if (block.lang === 'typescript' || block.lang === 'ts') {
         fileName = 'script.ts';
         language = 'typescript';
+      }
+
+      // If HTML block, make it index.html
+      if (block.code.includes('<!DOCTYPE html>') || block.code.includes('<html')) {
+        fileName = 'index.html';
+        language = 'html';
       }
 
       files.push({
@@ -348,11 +319,19 @@ function parseFilesFromResponse(text: string): FileData[] {
 }
 
 function extractMessageFromResponse(text: string): string {
+  // Remove file blocks from the message
   let message = text.replace(/### FILE:[\s\S]*?```\w+\n[\s\S]*?```/g, '').trim();
-
+  
+  // Remove reasoning sections
+  message = message.replace(/\*\*COMPREHENSION PHASE:\*\*[\s\S]*?(?=\*\*[A-Z]|\n\n|$)/gi, '');
+  message = message.replace(/\*\*ARCHITECTURAL PLANNING:\*\*[\s\S]*?(?=\*\*[A-Z]|\n\n|$)/gi, '');
+  message = message.replace(/\*\*THINKING:\*\*[\s\S]*?(?=\*\*[A-Z]|\n\n|$)/gi, '');
+  message = message.replace(/\*\*ANALYSIS:\*\*[\s\S]*?(?=\*\*[A-Z]|\n\n|$)/gi, '');
+  
+  // Clean up extra newlines
   message = message.replace(/\n{3,}/g, '\n\n');
-
-  return message || "I've generated the code for you!";
+  
+  return message.trim() || "I've generated the code for you!";
 }
 
 export async function fixCodeErrors(
@@ -364,14 +343,65 @@ export async function fixCodeErrors(
     .map((f) => `### FILE: ${f.name}\n\`\`\`${f.language}\n${f.content}\n\`\`\``)
     .join('\n\n');
 
-  const fixPrompt = `There's an error in the code. Please fix it.
+  const fixPrompt = `## AUTO-FIX MODE ACTIVATED
 
-ERROR: ${errorMessage}
+**TASK:** Debug and fix the error in the code.
 
-CURRENT FILES:
+**ERROR DETECTED:**
+\`\`\`
+${errorMessage}
+\`\`\`
+
+**CURRENT CODE:**
 ${filesContext}
 
-Please provide the COMPLETE fixed code for all files that need changes. Use the same ### FILE: format.`;
+**FIXING PROTOCOL:**
+1. Analyze the error message carefully
+2. Identify the root cause (not just symptoms)
+3. Determine which file(s) need changes
+4. Fix the issue completely
+5. Verify no new issues are introduced
+6. Test edge cases mentally
 
-  return generateWithGemini(fixPrompt, conversationHistory);
+**REQUIREMENTS:**
+- Provide COMPLETE fixed code for all affected files
+- Use the ### FILE: format for each file
+- Ensure all imports and references are correct
+- Add any missing error handling
+- Verify the fix resolves the issue completely
+- Do not break any working functionality
+
+Generate the corrected files now:`;
+
+  return generateWithGemini(fixPrompt, conversationHistory, false);
+}
+
+export async function analyzeAndEnhance(
+  files: FileData[],
+  enhancementRequest: string
+): Promise<GeminiResponse> {
+  const filesContext = files
+    .map((f) => `### FILE: ${f.name}\n\`\`\`${f.language}\n${f.content}\n\`\`\``)
+    .join('\n\n');
+
+  const enhancePrompt = `## CODE ENHANCEMENT MODE
+
+**CURRENT PROJECT:**
+${filesContext}
+
+**ENHANCEMENT REQUEST:**
+${enhancementRequest}
+
+**TASK:**
+Analyze the existing code and enhance it according to the request. Provide complete updated files with:
+- The requested enhancements
+- Improved code quality
+- Better error handling
+- Performance optimizations
+- Accessibility improvements
+- Enhanced UX details
+
+Use the ### FILE: format for all updated files.`;
+
+  return generateWithGemini(enhancePrompt, [], true);
 }

@@ -6,12 +6,13 @@ import { PreviewPanel } from './components/PreviewPanel';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable';
 import { Toaster } from './components/ui/sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import { AIStatusIndicator } from './components/AIStatusIndicator';
 
 function AppContent() {
-  const { showCodeEditor } = useAppStore();
+  const { showCodeEditor, isGenerating, extraThinkMode } = useAppStore();
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-950 via-purple-950 to-blue-950 text-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#0a0a0f] text-white overflow-hidden">
       <TopNav />
       
       <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -20,7 +21,7 @@ function AppContent() {
           <ChatPanel />
         </ResizablePanel>
 
-        <ResizableHandle className="w-1 bg-white/10 hover:bg-cyan-500/50 transition" />
+        <ResizableHandle className="w-px bg-white/5 hover:bg-cyan-500/30 transition" />
 
         {/* Code Editor - Conditionally rendered */}
         <AnimatePresence mode="sync">
@@ -38,7 +39,7 @@ function AppContent() {
                 </motion.div>
               </ResizablePanel>
 
-              <ResizableHandle className="w-1 bg-white/10 hover:bg-cyan-500/50 transition" />
+              <ResizableHandle className="w-px bg-white/5 hover:bg-cyan-500/30 transition" />
             </>
           )}
         </AnimatePresence>
@@ -50,6 +51,7 @@ function AppContent() {
       </ResizablePanelGroup>
 
       <Toaster />
+      <AIStatusIndicator isGenerating={isGenerating} extraThinkMode={extraThinkMode} />
     </div>
   );
 }
